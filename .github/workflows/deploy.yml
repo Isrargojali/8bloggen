@@ -33,20 +33,64 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
+          command_timeout: 30m
           script: |
+            # Install dependencies if not present
+            if ! command -v node &> /dev/null; then
+              curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+              apt install -y nodejs
+            fi
+            
+            if ! command -v pm2 &> /dev/null; then
+              npm install -g pm2
+            fi
+            
+            if ! command -v nginx &> /dev/null; then
+              apt update && apt install -y nginx
+            fi
+            
+            # Clone or pull repo
+            mkdir -p /var/www
+            cd /var/www
+            if [ ! -d "8bloggen" ]; then
+              git clone https://github.com/Isrargojali/8bloggen.git
+            else
+              cd 8bloggen
+              git pull origin master
+            fi
+            
             cd /var/www/8bloggen
-            git pull origin master
             
             # Install and build client
             cd client
-            npm ci --legacy-peer-deps
-            npm run build
+            npm install --legacy-peer-deps
+            VITE_BACKEND_URL=https://8bloggen.com npm run build
             
             # Install server dependencies
             cd ../server
-            npm ci
+            npm install
+            
+            # Create .env if not exists
+            if [ ! -f ".env" ]; then
+              cat > .env << 'EOF'
+            MONGO_URI=mongodb://localhost:27017/8bloggen
+            PORT=3000
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            COHERE_API_KEY=${{ secrets.COHERE_API_KEY }}
+            EOF
+            fi
+            
+            # Setup Nginx if not configured
+            if [ ! -f "/etc/nginx/sites-enabled/8bloggen" ]; then
+              cp /var/www/8bloggen/nginx.conf.example /etc/nginx/sites-available/8bloggen
+              ln -sf /etc/nginx/sites-available/8bloggen /etc/nginx/sites-enabled/
+              rm -f /etc/nginx/sites-enabled/default
+              nginx -t && systemctl restart nginx
+            fi
             
             # Restart PM2 processes
+            cd /var/www/8bloggen/server
             pm2 restart 8bloggen-server || pm2 start index.js --name 8bloggen-server
+            pm2 save
             
             echo "Deployment completed!"
