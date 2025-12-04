@@ -21,7 +21,7 @@ jobs:
       - name: Build Client
         working-directory: ./client
         run: |
-          npm ci
+          npm ci --legacy-peer-deps
           npm run build
         env:
           VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
@@ -39,7 +39,7 @@ jobs:
             
             # Install and build client
             cd client
-            npm ci
+            npm ci --legacy-peer-deps
             npm run build
             
             # Install server dependencies
