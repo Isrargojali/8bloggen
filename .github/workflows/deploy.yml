@@ -1,4 +1,4 @@
-name: Deploy to Hostinger
+name: Deploy to Hostinger VPS
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - master
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -18,21 +18,35 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install dependencies
+      - name: Build Client
         working-directory: ./client
-        run: npm ci
-
-      - name: Build
-        working-directory: ./client
-        run: npm run build
+        run: |
+          npm ci
+          npm run build
         env:
           VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
 
-      - name: Deploy to Hostinger via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./client/dist/
-          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            cd /var/www/8bloggen
+            git pull origin master
+            
+            # Install and build client
+            cd client
+            npm ci
+            npm run build
+            
+            # Install server dependencies
+            cd ../server
+            npm ci
+            
+            # Restart PM2 processes
+            pm2 restart 8bloggen-server || pm2 start index.js --name 8bloggen-server
+            
+            echo "Deployment completed!"
