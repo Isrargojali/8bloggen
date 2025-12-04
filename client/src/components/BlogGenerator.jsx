@@ -1,22 +1,26 @@
 import React from "react";
 import { useState } from "react";
-import axios from "axios";
+import axios from "../api/axios";
 
 const BlogGenerator = () => {
   const [keyword, setKeyword] = useState("");
   const [blog, setBlog] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleGenerate = async () => {
     if (!keyword.trim()) return;
 
     setLoading(true);
+    setError("");
     try {
-      const res = await axios.post("http://localhost:5000/api/generate-blog", { keyword });
+      const res = await axios.post("/generate-blog", { keyword });
       setBlog(res.data.blog);
     } catch (err) {
         console.error("Error generating blog:", err);
-        alert("Failed to generate blog.");
+        const errorMessage = err.response?.data?.error || "Failed to generate blog. Please check if Cohere API key is configured.";
+        setError(errorMessage);
+        alert(errorMessage);
       }
     setLoading(false);
   };
@@ -39,12 +43,16 @@ const BlogGenerator = () => {
         {loading ? "Generating..." : "Generate Blog"}
       </button>
 
+      {error && (
+        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded text-red-700">
+          {error}
+        </div>
+      )}
+
       {blog && (
         <div className="mt-6">
           <h2 className="text-xl font-bold mb-2">Generated Blog:</h2>
-          <div className="whitespace-pre-wrap bg-gray-50 p-4 rounded border">
-            {blog}
-          </div>
+          <div className="whitespace-pre-wrap bg-gray-50 p-4 rounded border" dangerouslySetInnerHTML={{ __html: blog }} />
         </div>
       )}
     </div>

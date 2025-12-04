@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import axios from "../api/axios";
 import { useNavigate } from "react-router-dom";
 // eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
@@ -31,7 +31,7 @@ const SignUp = () => {
     setLoading(true); // Set loading to true when making the request
 
     try {
-      const response = await axios.post("/api/auth/signup", {
+      const response = await axios.post("/auth/signup", {
         name,
         email,
         password,

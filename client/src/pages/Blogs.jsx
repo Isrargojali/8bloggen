@@ -9,7 +9,7 @@ const Blogs = () => {
   const [uniqueTags, setUniqueTags] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
   useEffect(() => {
     const fetchBlogs = async () => {

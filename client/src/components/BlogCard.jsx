@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { FaEdit, FaTrash } from "react-icons/fa";
 
 const BlogCard = ({ blog, onDelete }) => {
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
   const handleDelete = () => {
     const confirmed = window.confirm("Are you sure you want to delete this blog?");

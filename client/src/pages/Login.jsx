@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import axios from "../api/axios";
 import { useNavigate } from "react-router-dom";
 // eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
@@ -24,7 +24,7 @@ const Login = () => {
     setLoading(true); // Set loading to true when making the request
 
     try {
-      const response = await axios.post("/api/auth/login", { email, password });
+      const response = await axios.post("/auth/login", { email, password });
 
       // Assuming your backend returns user data like { user: { name, email, avatar }, token }
       const { user, token } = response.data;
@@ -36,8 +36,10 @@ const Login = () => {
         console.warn("User object is undefined. Login response:", response.data);
       }
 
-      // Optional: store token too
+      // Store token (using "authToken" to match other pages like Dashboard)
       localStorage.setItem("authToken", token);
+      // Also store as "token" for axios interceptor compatibility
+      localStorage.setItem("token", token);
 
       setError(""); // Clear any previous error
 
