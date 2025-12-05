@@ -88,9 +88,18 @@ jobs:
               nginx -t && systemctl restart nginx
             fi
             
+            # Ensure MongoDB is running and enabled on boot
+            systemctl enable mongod || true
+            systemctl start mongod || true
+            
             # Restart PM2 processes
             cd /var/www/8bloggen/server
-            pm2 restart 8bloggen-server || pm2 start index.js --name 8bloggen-server
+            pm2 delete 8bloggen-server 2>/dev/null || true
+            pm2 start ecosystem.config.js
+            pm2 save
+            
+            # Setup PM2 to start on system boot (run once)
+            pm2 startup systemd -u root --hp /root 2>/dev/null || true
             pm2 save
             
             echo "Deployment completed!"
