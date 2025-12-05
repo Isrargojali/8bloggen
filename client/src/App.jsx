@@ -1,6 +1,7 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
+import ChatBox from "./components/ChatBox";
 import Home from "./pages/Home";
 import Blogs from "./pages/Blogs";
 import About from "./pages/About";
@@ -19,6 +20,9 @@ function App() {
     <div className="bg-gray-50 min-h-screen">
       {/* Navbar stays fixed at the top */}
       <Navbar />
+      
+      {/* ChatBox for contact */}
+      <ChatBox />
 
       {/* Padding top to avoid content going under the navbar */}
       <div className="pt-20 px-4">
