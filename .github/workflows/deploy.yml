@@ -70,14 +70,11 @@ jobs:
             cd ../server
             npm install
             
-            # Create .env if not exists
+            # IMPORTANT: Never overwrite .env - it must be configured manually on VPS
+            # Create .env only if it doesn't exist (first deployment)
             if [ ! -f ".env" ]; then
-              cat > .env << 'EOF'
-            MONGO_URI=mongodb://localhost:27017/8bloggen
-            PORT=3000
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            COHERE_API_KEY=${{ secrets.COHERE_API_KEY }}
-            EOF
+              echo "WARNING: .env file not found! Please create it manually on VPS."
+              echo "Required variables: MONGO_URI, PORT, JWT_SECRET, COHERE_API_KEY"
             fi
             
             # Setup Nginx if not configured
