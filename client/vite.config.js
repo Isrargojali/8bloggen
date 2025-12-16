@@ -8,7 +8,12 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:3000', // Your backend
+        target: 'http://localhost:5001', // Your backend
+        changeOrigin: true,
+        secure: false,
+      },
+      '/uploads': {
+        target: 'http://localhost:5001', // Proxy uploads to backend
         changeOrigin: true,
         secure: false,
       },
