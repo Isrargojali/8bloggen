@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
 const AdminLogin = () => {
+  const [isSignup, setIsSignup] = useState(false);
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [adminKey, setAdminKey] = useState("");
@@ -12,7 +14,7 @@ const AdminLogin = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleAdminLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
@@ -21,20 +23,25 @@ const AdminLogin = () => {
       return;
     }
 
-    if (!adminKey) {
-      setError("Admin key is required.");
+    if (isSignup && !adminKey) {
+      setError("Admin key is required for signup.");
+      return;
+    }
+
+    if (isSignup && !name) {
+      setError("Name is required.");
       return;
     }
 
     setLoading(true);
 
     try {
-      const response = await axios.post("/auth/admin/login", { 
-        email, 
-        password, 
-        adminKey 
-      });
+      const endpoint = isSignup ? "/auth/admin/signup" : "/auth/admin/login";
+      const payload = isSignup 
+        ? { name, email, password, adminKey }
+        : { email, password };
 
+      const response = await axios.post(endpoint, payload);
       const { user, token } = response.data;
 
       if (user) {
@@ -48,7 +55,7 @@ const AdminLogin = () => {
       navigate("/dashboard");
 
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to log in as admin.");
+      setError(err.response?.data?.error || "Failed. Please try again.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -63,14 +70,34 @@ const AdminLogin = () => {
         transition={{ duration: 1 }}
         className="text-center mb-12"
       >
-        <h1 className="text-5xl font-extrabold text-gray-800 mb-4">Admin Login</h1>
+        <h1 className="text-5xl font-extrabold text-gray-800 mb-4">
+          {isSignup ? "Admin Signup" : "Admin Login"}
+        </h1>
         <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-          Enter your credentials and admin key to access admin features.
+          {isSignup 
+            ? "Create an admin account with your secret key." 
+            : "Login to your admin account."}
         </p>
       </motion.div>
 
       <div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-xl">
-        <form onSubmit={handleAdminLogin} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {isSignup && (
+            <div>
+              <label htmlFor="name" className="block text-lg text-gray-700">
+                Name
+              </label>
+              <input
+                type="text"
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full p-4 mt-2 bg-gray-100 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                placeholder="Enter your name"
+              />
+            </div>
+          )}
+
           <div>
             <label htmlFor="email" className="block text-lg text-gray-700">
               Email
@@ -99,29 +126,42 @@ const AdminLogin = () => {
             />
           </div>
 
-          <div>
-            <label htmlFor="adminKey" className="block text-lg text-gray-700">
-              Admin Secret Key
-            </label>
-            <input
-              type="password"
-              id="adminKey"
-              value={adminKey}
-              onChange={(e) => setAdminKey(e.target.value)}
-              className="w-full p-4 mt-2 bg-gray-100 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              placeholder="Enter admin secret key"
-            />
-          </div>
+          {isSignup && (
+            <div>
+              <label htmlFor="adminKey" className="block text-lg text-gray-700">
+                Admin Secret Key
+              </label>
+              <input
+                type="password"
+                id="adminKey"
+                value={adminKey}
+                onChange={(e) => setAdminKey(e.target.value)}
+                className="w-full p-4 mt-2 bg-gray-100 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                placeholder="Enter admin secret key"
+              />
+            </div>
+          )}
 
           <button
             type="submit"
             className={`w-full py-3 px-6 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition duration-300 ${loading && "opacity-50 cursor-not-allowed"}`}
             disabled={loading}
           >
-            {loading ? "Logging In..." : "Admin Login"}
+            {loading ? "Please wait..." : (isSignup ? "Create Admin Account" : "Admin Login")}
           </button>
 
           {error && <p className="text-red-500 text-center">{error}</p>}
+
+          <p className="text-center text-gray-600">
+            {isSignup ? "Already have admin account? " : "Need admin account? "}
+            <button
+              type="button"
+              onClick={() => { setIsSignup(!isSignup); setError(""); }}
+              className="text-red-500 hover:underline"
+            >
+              {isSignup ? "Login here" : "Signup here"}
+            </button>
+          </p>
 
           <p className="text-center text-gray-600">
             Regular user?{" "}

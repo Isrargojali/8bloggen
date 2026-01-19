@@ -127,9 +127,9 @@ router.put('/user', authMiddleware, async (req, res) => {
   }
 });
 
-// POST /admin/login - Admin login with secret key
-router.post('/admin/login', async (req, res) => {
-  const { email, password, adminKey } = req.body;
+// POST /admin/signup - Admin signup with secret key
+router.post('/admin/signup', async (req, res) => {
+  const { email, password, name, adminKey } = req.body;
   const ADMIN_SECRET = process.env.ADMIN_SECRET_KEY;
 
   if (!ADMIN_SECRET) {
@@ -141,17 +141,45 @@ router.post('/admin/login', async (req, res) => {
   }
 
   try {
+    const userExists = await User.findOne({ email });
+    if (userExists) return res.status(400).json({ error: 'User already exists' });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = new User({ email, password: hashedPassword, name, isAdmin: true });
+    await newUser.save();
+
+    const token = generateAuthToken(newUser);
+    res.status(201).json({
+      token,
+      message: 'Admin account created successfully!',
+      user: {
+        _id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        avatar: newUser.avatar || "",
+        isAdmin: true
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error. Please try again later.' });
+  }
+});
+
+// POST /admin/login - Admin login (no secret key needed, must be existing admin)
+router.post('/admin/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ error: 'Invalid email or password' });
 
+    if (!user.isAdmin) {
+      return res.status(403).json({ error: 'Access denied. Not an admin account.' });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ error: 'Invalid email or password' });
-
-    // Make user admin if not already
-    if (!user.isAdmin) {
-      user.isAdmin = true;
-      await user.save();
-    }
 
     const token = generateAuthToken(user);
     res.json({
@@ -168,6 +196,62 @@ router.post('/admin/login', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error. Please try again later.' });
+  }
+});
+
+// GET /admin/users - Get all users (admin only)
+router.get('/admin/users', authMiddleware, async (req, res) => {
+  try {
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ error: 'Access denied. Admin only.' });
+    }
+    const users = await User.find().select('-password');
+    res.json(users);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// PUT /admin/users/:id/block - Block/unblock user (admin only)
+router.put('/admin/users/:id/block', authMiddleware, async (req, res) => {
+  try {
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ error: 'Access denied. Admin only.' });
+    }
+    
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    user.isBlocked = !user.isBlocked;
+    await user.save();
+    
+    res.json({ message: `User ${user.isBlocked ? 'blocked' : 'unblocked'} successfully`, user });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// DELETE /admin/users/:id - Delete user (admin only)
+router.delete('/admin/users/:id', authMiddleware, async (req, res) => {
+  try {
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ error: 'Access denied. Admin only.' });
+    }
+    
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    if (user.isAdmin) {
+      return res.status(400).json({ error: 'Cannot delete admin user' });
+    }
+    
+    await user.deleteOne();
+    res.json({ message: 'User deleted successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
