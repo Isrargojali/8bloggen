@@ -88,11 +88,14 @@ const MenuBar = ({ editor }) => {
 };
 
 const CreateBlog = () => {
+  const [keyword, setKeyword] = useState("");
   const [title, setTitle] = useState("");
   const [tags, setTags] = useState("");
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [imageLoading, setImageLoading] = useState(false);
+  const [addTitleToImage, setAddTitleToImage] = useState(true);
 
   const editor = useEditor({
     extensions: [
@@ -108,6 +111,21 @@ const CreateBlog = () => {
     content: "",
   });
 
+  const handleGenerate = async () => {
+    if (!keyword.trim()) return;
+
+    setLoading(true);
+    try {
+      const res = await axios.post("/api/generate-blog", { keyword });
+      editor.commands.setContent(res.data.blog);
+      setTitle(keyword);
+    } catch (err) {
+      console.error("Error generating blog:", err);
+      alert("Failed to generate blog.");
+    }
+    setLoading(false);
+  };
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     setImage(file);
@@ -119,7 +137,7 @@ const CreateBlog = () => {
   };
 
   const handleGenerateImage = async () => {
-    const prompt = title.trim();
+    const prompt = title.trim() || keyword.trim();
     if (!prompt) {
       alert("Please enter a title or keyword first");
       return;
@@ -132,15 +150,45 @@ const CreateBlog = () => {
       
       const response = await fetch(imageUrl);
       const blob = await response.blob();
-      const file = new File([blob], "ai-generated.jpg", { type: "image/jpeg" });
       
-      setImage(file);
-      setPreview(imageUrl);
+      if (addTitleToImage) {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext("2d");
+          
+          ctx.drawImage(img, 0, 0);
+          
+          ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+          ctx.fillRect(0, canvas.height - 80, canvas.width, 80);
+          
+          ctx.fillStyle = "white";
+          ctx.font = "bold 28px Arial";
+          ctx.textAlign = "center";
+          ctx.fillText(prompt, canvas.width / 2, canvas.height - 35);
+          
+          canvas.toBlob((newBlob) => {
+            const file = new File([newBlob], "ai-generated.jpg", { type: "image/jpeg" });
+            setImage(file);
+            setPreview(canvas.toDataURL("image/jpeg"));
+            setImageLoading(false);
+          }, "image/jpeg");
+        };
+        img.src = URL.createObjectURL(blob);
+      } else {
+        const file = new File([blob], "ai-generated.jpg", { type: "image/jpeg" });
+        setImage(file);
+        setPreview(imageUrl);
+        setImageLoading(false);
+      }
     } catch (err) {
       console.error("Error generating image:", err);
       alert("Failed to generate image");
+      setImageLoading(false);
     }
-    setImageLoading(false);
   };
 
   const handleSubmit = async (e) => {
@@ -190,6 +238,27 @@ const CreateBlog = () => {
       <div className="flex-1 max-w-4xl mx-auto bg-white shadow-lg p-6 rounded-lg mt-10">
         <h1 className="text-2xl font-bold text-gray-800 mb-6">Create New Blog</h1>
 
+        <div className="mb-4">
+          <label className="block font-medium mb-1 text-gray-700">Keyword for AI Blog</label>
+          <div className="flex space-x-2">
+            <input
+              type="text"
+              placeholder="e.g. Top destinations in 2025"
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              className="flex-1 border px-4 py-2 rounded"
+            />
+            <button
+              type="button"
+              onClick={handleGenerate}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              disabled={loading}
+            >
+              {loading ? "Generating..." : "Generate Content"}
+            </button>
+          </div>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block font-medium mb-1 text-gray-700">Title</label>
@@ -234,6 +303,15 @@ const CreateBlog = () => {
                 {imageLoading ? "Generating..." : "Generate AI Image"}
               </button>
             </div>
+            <label className="flex items-center space-x-2 mb-2">
+              <input
+                type="checkbox"
+                checked={addTitleToImage}
+                onChange={(e) => setAddTitleToImage(e.target.checked)}
+                className="w-4 h-4"
+              />
+              <span className="text-sm text-gray-600">Add title text to generated image</span>
+            </label>
             {preview && (
               <img src={preview} alt="Preview" className="mt-4 w-full max-h-64 object-cover rounded" />
             )}
