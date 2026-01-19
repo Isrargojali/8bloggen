@@ -88,12 +88,10 @@ const MenuBar = ({ editor }) => {
 };
 
 const CreateBlog = () => {
-  const [keyword, setKeyword] = useState("");
   const [title, setTitle] = useState("");
   const [tags, setTags] = useState("");
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [imageLoading, setImageLoading] = useState(false);
 
   const editor = useEditor({
@@ -110,21 +108,6 @@ const CreateBlog = () => {
     content: "",
   });
 
-  const handleGenerate = async () => {
-    if (!keyword.trim()) return;
-
-    setLoading(true);
-    try {
-      const res = await axios.post("/api/generate-blog", { keyword });
-      editor.commands.setContent(res.data.blog);
-      setTitle(keyword);
-    } catch (err) {
-      console.error("Error generating blog:", err);
-      alert("Failed to generate blog.");
-    }
-    setLoading(false);
-  };
-
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     setImage(file);
@@ -136,7 +119,7 @@ const CreateBlog = () => {
   };
 
   const handleGenerateImage = async () => {
-    const prompt = title.trim() || keyword.trim();
+    const prompt = title.trim();
     if (!prompt) {
       alert("Please enter a title or keyword first");
       return;
@@ -206,26 +189,6 @@ const CreateBlog = () => {
       <Sidebar />
       <div className="flex-1 max-w-4xl mx-auto bg-white shadow-lg p-6 rounded-lg mt-10">
         <h1 className="text-2xl font-bold text-gray-800 mb-6">Create New Blog</h1>
-
-        <div className="mb-4">
-          <label className="block font-medium mb-1 text-gray-700">Keyword for AI Blog</label>
-          <div className="flex space-x-2">
-            <input
-              type="text"
-              placeholder="e.g. Top destinations in 2025"
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              className="flex-1 border px-4 py-2 rounded"
-            />
-            <button
-              onClick={handleGenerate}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-              disabled={loading}
-            >
-              {loading ? "Generating..." : "Generate"}
-            </button>
-          </div>
-        </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
