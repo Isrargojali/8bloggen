@@ -61,11 +61,17 @@ jobs:
             
             cd /var/www/8bloggen
             
-            # Export secrets as environment variables for docker-compose
-            export MONGO_URI="${{ secrets.MONGO_URI }}"
-            export JWT_SECRET="${{ secrets.JWT_SECRET }}"
-            export ADMIN_SECRET_KEY="${{ secrets.ADMIN_SECRET_KEY }}"
-            export COHERE_API_KEY="${{ secrets.COHERE_API_KEY }}"
+            # Create .env file from GitHub secrets
+            cat > .env << 'EOF'
+            MONGO_URI=${{ secrets.MONGO_URI }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            ADMIN_SECRET_KEY=${{ secrets.ADMIN_SECRET_KEY }}
+            COHERE_API_KEY=${{ secrets.COHERE_API_KEY }}
+            PORT=5000
+            EOF
+            
+            # Remove leading spaces from .env
+            sed -i 's/^[ \t]*//' .env
             
             # Stop old PM2 processes if running
             pm2 delete 8bloggen-server 2>/dev/null || true
