@@ -63,6 +63,25 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleResetPassword = async (userId) => {
+    const newPassword = window.prompt("Enter new password (min 6 characters):");
+    if (!newPassword) return;
+    if (newPassword.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+    try {
+      const token = localStorage.getItem("authToken");
+      await axios.put(`/auth/admin/users/${userId}/reset-password`, 
+        { newPassword },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert("Password reset successful");
+    } catch (err) {
+      setError(err.response?.data?.error || "Failed to reset password");
+    }
+  };
+
   const handleDeleteBlog = async (blogId) => {
     if (!window.confirm("Are you sure you want to delete this blog?")) return;
     try {
@@ -138,6 +157,12 @@ const AdminDashboard = () => {
                           className={`px-3 py-1 rounded text-white text-sm ${user.isBlocked ? "bg-green-500 hover:bg-green-600" : "bg-yellow-500 hover:bg-yellow-600"}`}
                         >
                           {user.isBlocked ? "Unblock" : "Block"}
+                        </button>
+                        <button
+                          onClick={() => handleResetPassword(user._id)}
+                          className="px-3 py-1 rounded bg-blue-500 text-white text-sm hover:bg-blue-600"
+                        >
+                          Reset Password
                         </button>
                         <button
                           onClick={() => handleDeleteUser(user._id)}

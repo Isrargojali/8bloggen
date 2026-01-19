@@ -60,9 +60,10 @@ jobs:
             # Stop old PM2 processes if running
             pm2 delete 8bloggen-server 2>/dev/null || true
             
-            # Build and run with Docker
+            # Build and run with Docker (force rebuild)
             docker compose down || true
-            docker compose up -d --build
+            docker compose build --no-cache
+            docker compose up -d
             
             echo "Deployment completed!"
         env:

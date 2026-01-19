@@ -255,4 +255,30 @@ router.delete('/admin/users/:id', authMiddleware, async (req, res) => {
   }
 });
 
+// PUT /admin/users/:id/reset-password - Admin reset user password
+router.put('/admin/users/:id/reset-password', authMiddleware, async (req, res) => {
+  const { newPassword } = req.body;
+
+  try {
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ error: 'Access denied. Admin only.' });
+    }
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    res.json({ message: 'Password reset successful' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;
