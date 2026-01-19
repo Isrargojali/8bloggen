@@ -34,7 +34,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
           command_timeout: 30m
-          envs: MONGO_URI,JWT_SECRET,ADMIN_SECRET_KEY,COHERE_API_KEY
+          envs: MONGO_URI,JWT_SECRET,ADMIN_SECRET_KEY
           script: |
             # Clone or pull repo
             mkdir -p /var/www
@@ -53,11 +53,10 @@ jobs:
             
             # Build and run with Docker
             docker compose down || true
-            MONGO_URI="$MONGO_URI" JWT_SECRET="$JWT_SECRET" ADMIN_SECRET_KEY="$ADMIN_SECRET_KEY" COHERE_API_KEY="$COHERE_API_KEY" docker compose up -d --build
+            MONGO_URI="$MONGO_URI" JWT_SECRET="$JWT_SECRET" ADMIN_SECRET_KEY="$ADMIN_SECRET_KEY" docker compose up -d --build
             
             echo "Deployment completed!"
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           ADMIN_SECRET_KEY: ${{ secrets.ADMIN_SECRET_KEY }}
-          COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
