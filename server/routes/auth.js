@@ -10,7 +10,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 // Generate a JWT token
 const generateAuthToken = (user) => {
-  return jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: '1h' });
+  return jwt.sign({ id: user._id, email: user.email, isAdmin: user.isAdmin || false }, JWT_SECRET, { expiresIn: '1h' });
 };
 
 // Middleware for protected routes
@@ -46,7 +46,8 @@ router.post('/signup', async (req, res) => {
         _id: newUser._id,
         name: newUser.name,
         email: newUser.email,
-        avatar: newUser.avatar || ""
+        avatar: newUser.avatar || "",
+        isAdmin: newUser.isAdmin || false
       },
     });
   } catch (err) {
@@ -73,7 +74,8 @@ router.post('/login', async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
-        avatar: user.avatar || ""
+        avatar: user.avatar || "",
+        isAdmin: user.isAdmin || false
       },
     });
   } catch (err) {
@@ -122,6 +124,50 @@ router.put('/user', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to update user' });
+  }
+});
+
+// POST /admin/login - Admin login with secret key
+router.post('/admin/login', async (req, res) => {
+  const { email, password, adminKey } = req.body;
+  const ADMIN_SECRET = process.env.ADMIN_SECRET_KEY;
+
+  if (!ADMIN_SECRET) {
+    return res.status(500).json({ error: 'Admin functionality not configured' });
+  }
+
+  if (adminKey !== ADMIN_SECRET) {
+    return res.status(403).json({ error: 'Invalid admin key' });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ error: 'Invalid email or password' });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ error: 'Invalid email or password' });
+
+    // Make user admin if not already
+    if (!user.isAdmin) {
+      user.isAdmin = true;
+      await user.save();
+    }
+
+    const token = generateAuthToken(user);
+    res.json({
+      token,
+      message: 'Admin login successful!',
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar || "",
+        isAdmin: true
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error. Please try again later.' });
   }
 });
 

@@ -110,14 +110,21 @@ router.put("/:id", authMiddleware, upload.single("image"), async (req, res) => {
 /**
  * @route   DELETE /api/blogs/:id
  * @desc    Delete a blog post
- * @access  Private (Only authorized users can delete their own blog)
+ * @access  Private (Owner or Admin can delete)
  */
 router.delete("/:id", authMiddleware, async (req, res) => {
   try {
     const blog = await Blog.findById(req.params.id);
 
-    if (!blog || blog.author.toString() !== req.user.id) {
-      return res.status(403).json({ error: "Unauthorized or blog not found" });
+    if (!blog) {
+      return res.status(404).json({ error: "Blog not found" });
+    }
+
+    const isOwner = blog.author.toString() === req.user.id;
+    const isAdmin = req.user.isAdmin === true;
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ error: "Unauthorized to delete this blog" });
     }
 
     await blog.deleteOne();

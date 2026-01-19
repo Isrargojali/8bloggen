@@ -6,19 +6,26 @@ import Sidebar from "../pages/Sidebar";
 const BlogManagement = () => {
   const [blogs, setBlogs] = useState([]);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);  // Add loading state
+  const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
         const token = localStorage.getItem("authToken");
-        const response = await axios.get("/api/blogs/user", {
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        const userIsAdmin = user.isAdmin === true;
+        setIsAdmin(userIsAdmin);
+
+        // Admin sees all blogs, regular users see only their own
+        const endpoint = userIsAdmin ? "/api/blogs/all" : "/api/blogs/user";
+        const response = await axios.get(endpoint, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
         setBlogs(response.data);
-        setLoading(false);  // Set loading to false after data is fetched
+        setLoading(false);
       } catch (err) {
         console.error(err);
         setError("Failed to fetch blogs from the server.");
@@ -52,7 +59,14 @@ const BlogManagement = () => {
       {/* Main Content */}
       <div className="flex-1 p-8">
         {error && <p className="text-red-500 mb-4">{error}</p>}
-        <h2 className="text-3xl font-semibold mb-6">Your Blogs</h2>
+        <h2 className="text-3xl font-semibold mb-6">
+          {isAdmin ? "All Blogs (Admin View)" : "Your Blogs"}
+        </h2>
+        {isAdmin && (
+          <p className="text-sm text-red-600 mb-4">
+            Admin mode: You can delete any blog post.
+          </p>
+        )}
 
         {loading ? (
           <p className="text-gray-500">Loading blogs...</p>
