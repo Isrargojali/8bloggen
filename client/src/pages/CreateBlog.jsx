@@ -94,6 +94,7 @@ const CreateBlog = () => {
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [imageLoading, setImageLoading] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -132,6 +133,31 @@ const CreateBlog = () => {
       reader.onloadend = () => setPreview(reader.result);
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleGenerateImage = async () => {
+    const prompt = title.trim() || keyword.trim();
+    if (!prompt) {
+      alert("Please enter a title or keyword first");
+      return;
+    }
+
+    setImageLoading(true);
+    try {
+      const encodedPrompt = encodeURIComponent(prompt + " blog cover image high quality");
+      const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=800&height=400&nologo=true`;
+      
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const file = new File([blob], "ai-generated.jpg", { type: "image/jpeg" });
+      
+      setImage(file);
+      setPreview(imageUrl);
+    } catch (err) {
+      console.error("Error generating image:", err);
+      alert("Failed to generate image");
+    }
+    setImageLoading(false);
   };
 
   const handleSubmit = async (e) => {
@@ -233,8 +259,18 @@ const CreateBlog = () => {
           </div>
 
           <div>
-            <label className="block font-medium mb-1 text-gray-700">Upload Image</label>
-            <input type="file" accept="image/*" onChange={handleImageChange} className="mt-2" />
+            <label className="block font-medium mb-1 text-gray-700">Blog Image</label>
+            <div className="flex space-x-2 mb-2">
+              <input type="file" accept="image/*" onChange={handleImageChange} className="flex-1" />
+              <button
+                type="button"
+                onClick={handleGenerateImage}
+                className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+                disabled={imageLoading}
+              >
+                {imageLoading ? "Generating..." : "Generate AI Image"}
+              </button>
+            </div>
             {preview && (
               <img src={preview} alt="Preview" className="mt-4 w-full max-h-64 object-cover rounded" />
             )}
