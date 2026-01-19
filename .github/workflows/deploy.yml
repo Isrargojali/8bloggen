@@ -34,21 +34,8 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
           command_timeout: 30m
+          envs: MONGO_URI,JWT_SECRET,ADMIN_SECRET_KEY,COHERE_API_KEY
           script: |
-            # Install dependencies if not present
-            if ! command -v node &> /dev/null; then
-              curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-              apt install -y nodejs
-            fi
-            
-            if ! command -v pm2 &> /dev/null; then
-              npm install -g pm2
-            fi
-            
-            if ! command -v nginx &> /dev/null; then
-              apt update && apt install -y nginx
-            fi
-            
             # Clone or pull repo
             mkdir -p /var/www
             cd /var/www
@@ -64,12 +51,13 @@ jobs:
             # Stop old PM2 processes if running
             pm2 delete 8bloggen-server 2>/dev/null || true
             
-            # Build and run with Docker using GitHub secrets directly
+            # Build and run with Docker
             docker compose down || true
-            MONGO_URI=${{ secrets.MONGO_URI }} \
-            JWT_SECRET=${{ secrets.JWT_SECRET }} \
-            ADMIN_SECRET_KEY=${{ secrets.ADMIN_SECRET_KEY }} \
-            COHERE_API_KEY=${{ secrets.COHERE_API_KEY }} \
-            docker compose up -d --build
+            MONGO_URI="$MONGO_URI" JWT_SECRET="$JWT_SECRET" ADMIN_SECRET_KEY="$ADMIN_SECRET_KEY" COHERE_API_KEY="$COHERE_API_KEY" docker compose up -d --build
             
             echo "Deployment completed!"
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          ADMIN_SECRET_KEY: ${{ secrets.ADMIN_SECRET_KEY }}
+          COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
