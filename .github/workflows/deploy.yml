@@ -61,42 +61,17 @@ jobs:
             
             cd /var/www/8bloggen
             
-            # Install and build client
-            cd client
-            npm install --legacy-peer-deps
-            VITE_BACKEND_URL=https://8bloggen.com npm run build
+            # Export secrets as environment variables for docker-compose
+            export MONGO_URI="${{ secrets.MONGO_URI }}"
+            export JWT_SECRET="${{ secrets.JWT_SECRET }}"
+            export ADMIN_SECRET_KEY="${{ secrets.ADMIN_SECRET_KEY }}"
+            export COHERE_API_KEY="${{ secrets.COHERE_API_KEY }}"
             
-            # Install server dependencies
-            cd ../server
-            npm install
-            
-            # IMPORTANT: Never overwrite .env - it must be configured manually on VPS
-            # Create .env only if it doesn't exist (first deployment)
-            if [ ! -f ".env" ]; then
-              echo "WARNING: .env file not found! Please create it manually on VPS."
-              echo "Required variables: MONGO_URI, PORT, JWT_SECRET, COHERE_API_KEY"
-            fi
-            
-            # Setup Nginx if not configured
-            if [ ! -f "/etc/nginx/sites-enabled/8bloggen" ]; then
-              cp /var/www/8bloggen/nginx.conf.example /etc/nginx/sites-available/8bloggen
-              ln -sf /etc/nginx/sites-available/8bloggen /etc/nginx/sites-enabled/
-              rm -f /etc/nginx/sites-enabled/default
-              nginx -t && systemctl restart nginx
-            fi
-            
-            # Ensure MongoDB is running and enabled on boot
-            systemctl enable mongod || true
-            systemctl start mongod || true
-            
-            # Restart PM2 processes
-            cd /var/www/8bloggen/server
+            # Stop old PM2 processes if running
             pm2 delete 8bloggen-server 2>/dev/null || true
-            pm2 start ecosystem.config.js
-            pm2 save
             
-            # Setup PM2 to start on system boot (run once)
-            pm2 startup systemd -u root --hp /root 2>/dev/null || true
-            pm2 save
+            # Build and run with Docker
+            docker compose down || true
+            docker compose up -d --build
             
             echo "Deployment completed!"
