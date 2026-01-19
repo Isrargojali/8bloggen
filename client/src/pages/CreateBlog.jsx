@@ -119,6 +119,9 @@ const CreateBlog = () => {
       const res = await axios.post("/api/generate-blog", { keyword });
       editor.commands.setContent(res.data.blog);
       setTitle(keyword);
+      if (res.data.tags) {
+        setTags(res.data.tags);
+      }
     } catch (err) {
       console.error("Error generating blog:", err);
       alert("Failed to generate blog.");
