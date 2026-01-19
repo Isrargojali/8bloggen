@@ -92,6 +92,14 @@ const Navbar = () => {
                 </div>
                 <span className="text-gray-800 font-semibold">{user.name}</span>
               </Link>
+              {user.isAdmin && (
+                <Link
+                  to="/admin/dashboard"
+                  className="text-white bg-purple-600 px-3 py-1 rounded hover:bg-purple-700"
+                >
+                  Admin
+                </Link>
+              )}
               <button
                 onClick={handleLogout}
                 className="text-white bg-red-600 px-3 py-1 rounded hover:bg-red-700"
@@ -100,12 +108,20 @@ const Navbar = () => {
               </button>
             </>
           ) : (
-            <Link
-              to="/signup"
-              className="text-white bg-blue-600 px-3 py-1 rounded hover:bg-blue-700"
-            >
-              Sign Up
-            </Link>
+            <>
+              <Link
+                to="/login"
+                className="text-gray-700 hover:text-blue-600 font-medium"
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/signup"
+                className="text-white bg-blue-600 px-3 py-1 rounded hover:bg-blue-700"
+              >
+                Sign Up
+              </Link>
+            </>
           )}
         </div>
       </div>
@@ -127,6 +143,14 @@ const Navbar = () => {
               </div>
               <span className="text-gray-800 font-semibold">{user.name}</span>
             </Link>
+            {user.isAdmin && (
+              <Link
+                to="/admin/dashboard"
+                className="text-white bg-purple-600 px-3 py-1 rounded hover:bg-purple-700 block"
+              >
+                Admin
+              </Link>
+            )}
             <button
               onClick={handleLogout}
               className="text-white bg-red-600 px-3 py-1 rounded hover:bg-red-700 block"
@@ -135,12 +159,20 @@ const Navbar = () => {
             </button>
           </>
         ) : (
-          <Link
-            to="/signup"
-            className="text-white bg-blue-600 px-3 py-1 rounded hover:bg-blue-700 block"
-          >
-            Sign Up
-          </Link>
+          <>
+            <Link
+              to="/login"
+              className="text-gray-700 hover:text-blue-600 font-medium block"
+            >
+              Sign In
+            </Link>
+            <Link
+              to="/signup"
+              className="text-white bg-blue-600 px-3 py-1 rounded hover:bg-blue-700 block"
+            >
+              Sign Up
+            </Link>
+          </>
         )}
       </div>
     </nav>

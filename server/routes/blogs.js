@@ -65,7 +65,7 @@ router.get("/user", authMiddleware, async (req, res) => {
  */
 router.get("/all", async (req, res) => {
   try {
-    const blogs = await Blog.find().sort({ createdAt: -1 });
+    const blogs = await Blog.find().populate("author", "name email").sort({ createdAt: -1 });
 
     if (!blogs || blogs.length === 0) {
       return res.status(404).json({ error: "No blogs found" });
@@ -88,8 +88,15 @@ router.put("/:id", authMiddleware, upload.single("image"), async (req, res) => {
     const { title, content, tags } = req.body;
     const blog = await Blog.findById(req.params.id);
 
-    if (!blog || blog.author.toString() !== req.user.id) {
-      return res.status(403).json({ error: "Unauthorized or blog not found" });
+    if (!blog) {
+      return res.status(404).json({ error: "Blog not found" });
+    }
+
+    const isOwner = blog.author.toString() === req.user.id;
+    const isAdmin = req.user.isAdmin === true;
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ error: "Unauthorized to edit this blog" });
     }
 
     blog.title = title;

@@ -8,6 +8,7 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Login from "./pages/Login";
 import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import AccountSettings from "./pages/AccountSettings";
@@ -35,6 +36,7 @@ function App() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<Login />} />
           <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/signup" element={<Signup />} />
 
           {/* Dashboard Routes */}
