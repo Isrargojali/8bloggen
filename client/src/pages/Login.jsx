@@ -5,52 +5,52 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
 const Login = () => {
+  const [isSignup, setIsSignup] = useState(false);
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false); // Loading state
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validation for email format
     const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
     if (!emailRegex.test(email)) {
       setError("Please enter a valid email address.");
       return;
     }
 
-    setLoading(true); // Set loading to true when making the request
+    if (isSignup && !name) {
+      setError("Name is required.");
+      return;
+    }
+
+    setLoading(true);
 
     try {
-      const response = await axios.post("/auth/login", { email, password });
+      const endpoint = isSignup ? "/auth/signup" : "/auth/login";
+      const payload = isSignup ? { name, email, password } : { email, password };
 
-      // Assuming your backend returns user data like { user: { name, email, avatar }, token }
+      const response = await axios.post(endpoint, payload);
       const { user, token } = response.data;
 
-      // Store user in localStorage (for Navbar)
       if (user) {
         localStorage.setItem("user", JSON.stringify(user));
-      } else {
-        console.warn("User object is undefined. Login response:", response.data);
       }
 
-      // Store token (using "authToken" to match other pages like Dashboard)
       localStorage.setItem("authToken", token);
-      // Also store as "token" for axios interceptor compatibility
       localStorage.setItem("token", token);
 
-      setError(""); // Clear any previous error
-
-      // Redirect to homepage or dashboard
+      setError("");
       navigate("/dashboard");
 
     } catch (err) {
-      setError("Failed to log in. Please check your credentials and try again.");
+      setError(err.response?.data?.error || "Failed. Please try again.");
       console.error(err);
     } finally {
-      setLoading(false); // Set loading to false after request is complete
+      setLoading(false);
     }
   };
 
@@ -62,15 +62,32 @@ const Login = () => {
         transition={{ duration: 1 }}
         className="text-center mb-12"
       >
-        <h1 className="text-5xl font-extrabold text-gray-800 mb-4">Login</h1>
+        <h1 className="text-5xl font-extrabold text-gray-800 mb-4">
+          {isSignup ? "Sign Up" : "Sign In"}
+        </h1>
         <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-          Welcome back! Please log in to your account.
+          {isSignup ? "Create your account to get started." : "Welcome back! Please sign in to your account."}
         </p>
       </motion.div>
 
       <div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-xl">
-        <form onSubmit={handleLogin} className="space-y-6">
-          {/* Email Field */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {isSignup && (
+            <div>
+              <label htmlFor="name" className="block text-lg text-gray-700">
+                Name
+              </label>
+              <input
+                type="text"
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full p-4 mt-2 bg-gray-100 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                placeholder="Enter your name"
+              />
+            </div>
+          )}
+
           <div>
             <label htmlFor="email" className="block text-lg text-gray-700">
               Email
@@ -85,7 +102,6 @@ const Login = () => {
             />
           </div>
 
-          {/* Password Field */}
           <div>
             <label htmlFor="password" className="block text-lg text-gray-700">
               Password
@@ -100,24 +116,25 @@ const Login = () => {
             />
           </div>
 
-          {/* Submit Button */}
           <button
             type="submit"
             className={`w-full py-3 px-6 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition duration-300 ${loading && "opacity-50 cursor-not-allowed"}`}
-            disabled={loading} // Disable button while loading
+            disabled={loading}
           >
-            {loading ? "Logging In..." : "Log In"}
+            {loading ? "Please wait..." : (isSignup ? "Sign Up" : "Sign In")}
           </button>
 
-          {/* Error Message */}
           {error && <p className="text-red-500 text-center">{error}</p>}
 
-          {/* Sign Up Link */}
           <p className="text-center text-gray-600">
-            Don’t have an account?{" "}
-            <a href="/signup" className="text-blue-500 hover:underline">
-              Sign Up
-            </a>
+            {isSignup ? "Already have an account? " : "Don't have an account? "}
+            <button
+              type="button"
+              onClick={() => { setIsSignup(!isSignup); setError(""); }}
+              className="text-blue-500 hover:underline"
+            >
+              {isSignup ? "Sign In" : "Sign Up"}
+            </button>
           </p>
         </form>
       </div>
