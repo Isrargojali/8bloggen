@@ -19,7 +19,7 @@ services:
     container_name: 8bloggen-client
     restart: unless-stopped
     ports:
-      - "3001:80"
+      - "3008:80"
     depends_on:
       - server
     networks:
