@@ -3,7 +3,7 @@ import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom"; // Import useNavigate
 import DOMPurify from "dompurify";
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+const backendUrl = import.meta.env.VITE_BACKEND_URL || "";
 
 const BlogView = () => {
   const { id } = useParams(); // Get the blog ID from the URL
